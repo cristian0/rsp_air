@@ -1,8 +1,18 @@
 import time
+from datetime import datetime
 import sqlite3
 from PiicoDev_ENS160 import PiicoDev_ENS160 # import the device driver
 from pathlib import Path
 import sys
+import signal
+
+def log(message):
+    print(f"{str(datetime.fromtimestamp(time.time()))} {message}")
+    sys.stdout.flush()
+
+def interrupt_handler(signum, frame):
+    log(f"Closing for signal {signum} ({signal.Signals(signum).name}).")
+    sys.exit(0)
 
 def insert_sampling(aqi, tvoc, eco2, mode):
 
@@ -19,24 +29,74 @@ def insert_sampling(aqi, tvoc, eco2, mode):
     con.commit()
     con.close()
 
-
 ###########################################################
 
-sensor = PiicoDev_ENS160()
+class Sample_ENS160():
+    """
+    operation can be : 'operating ok', 'warm-up', 'initial start-up', 'no valid output', 'fake operating ok', 'turned off'
+    """
 
-while True:
-    aqi = sensor.aqi.value
-    tvoc = sensor.tvoc
-    eco2 = sensor.eco2.value
+    def __init__(self) -> None:
+        self.operation = 'turned off'
 
-    insert_sampling(aqi, tvoc, eco2, sensor.operation)
+        self.sensor = PiicoDev_ENS160()
+        pass
 
-    print('   Date: ' + str(time.time()))
-    print('    AQI: ' + str(sensor.aqi.value) + ' [' + str(sensor.aqi.rating) +']')
-    print('   TVOC: ' + str(sensor.tvoc) + ' ppb')
-    print('   eCO2: ' + str(sensor.eco2.value) + ' ppm [' + str(sensor.eco2.rating) +']')
-    print(' Status: ' + sensor.operation)
-    print('     Db: Saved')
-    print('--------------------------------')
-    sys.stdout.flush() # avoid output buffering on stdout
-    time.sleep(60)
+    def sample(self):
+
+        self.valid_data = False
+        self.aqi_value = self.sensor.aqi.value
+        self.aqi_rating = self.sensor.aqi.rating
+        self.tvoc = self.sensor.tvoc
+        self.eco2_value = self.sensor.eco2.value
+        self.eco2_rating = self.sensor.eco2.rating
+        self.operation = self.sensor.operation
+
+        if(self.operation != 'operating ok'):
+            return False
+        
+        if(self.aqi_value == 0):
+            self.operation = 'no valid output'
+            return False
+        
+        if(self.operation == 'operating ok'):
+            self.valid_data = True
+        
+        return True
+
+def main():
+    log(f"Started")
+
+    retry_time_for_operation = {
+        'operating ok': 60,
+        'warm-up': 10,
+        'initial start-up': 60, 
+        'no valid output': 10, 
+        'fake operating ok': 10,
+        'turned off': 10
+    }
+
+    sreader = Sample_ENS160()
+
+    count = 0
+    while True:
+        sample = sreader.sample()
+        print((sample, sreader.aqi_value, sreader.tvoc, sreader.eco2_value, sreader.operation))
+        if(sample != False):
+            insert_sampling(sreader.aqi_value, sreader.tvoc, sreader.eco2_value, sreader.operation)
+            log(f"Sampled AQI:{str(sreader.aqi_value)} TVOC:{str(sreader.tvoc)}ppb eCO2:{str(sreader.eco2_value)}ppm")
+        else:
+            log(f"Mode: '{sreader.operation}', not sampling")
+            # count += 1
+            # if(sreader.operation == 'no valid output' and count == 3) :
+            #     log(f"rebooting reader")
+            #     count = 0
+                # del(sreader)
+                # sreader = Sample_ENS160()
+
+        time.sleep(retry_time_for_operation[sreader.operation])
+
+if __name__ == '__main__':
+    signal.signal(signal.SIGINT, interrupt_handler)
+
+    main()
