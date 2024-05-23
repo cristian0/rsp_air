@@ -78,6 +78,8 @@ def main():
             insert_sampling('altitude', sreader.altitude)
             log(f"Altitude: %0.2f meters" % sreader.altitude)
 
+            log(f"AQI: %0.2f" % sreader.aqi)
+
         except Exception as e:
             log(f"Error during sampling: {e}")
 

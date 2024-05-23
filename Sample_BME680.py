@@ -1,5 +1,6 @@
 import adafruit_bme680
 import board
+import math
 
 class Sample_BME680():
     """
@@ -19,5 +20,6 @@ class Sample_BME680():
         self.relative_humidity = self.sensor.relative_humidity
         self.pressure = self.sensor.pressure
         self.altitude = self.sensor.altitude
-        
+        self.aqi = math.log(self.sensor.gas) + 0.04 * self.sensor.relative_humidity
+
         return True
