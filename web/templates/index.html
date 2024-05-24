@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>RSP Air</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+    <script src="/meteo_data.js" type="text/javascript"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction:column;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        .metrics-container {
+          display: flex;
+          gap: 20px;
+          width: 100%;
+          box-sizing: border-box;
+          margin-bottom: 20px;
+          justify-content: center;
+          margin: 3em 0 1em 0;
+        }
+
+        .metric {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .metric-name {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #cacaca;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #656565;
+        }
+
+        .metric-unit {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        #canvas-container{
+          display: flex;
+          flex-direction:column;
+        gap: 20px;
+          width: 100%;
+          box-sizing: border-box;
+          margin-bottom: 20px;
+        }
+
+        #last_update{
+          color: #cacaca;
+          font-size: 0.8em;
+        }
+
+        canvas {
+          margin: 2em;
+          background-color: #ffffff;
+          padding: 1em;
+          border: 1px solid #ddd;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="metrics-container">
+      <div class="metric" id="last_aqui">
+          <div class="metric-name">AQI</div>
+          <div class="metric-value"><b>-</b></div>
+      </div>
+      <div class="metric" id="last_temp">
+          <div class="metric-name">Temp</div>
+          <div class="metric-value"><b>-</b> <span class="metric-unit">C°</span></div>
+      </div>
+      <div class="metric" id="last_hum">
+        <div class="metric-name">Humidity</div>
+        <div class="metric-value"><b>-</b> <span class="metric-unit">%</span></div>
+    </div>
+    <div class="metric" id="last_gas">
+      <div class="metric-name">Gas</div>
+      <div class="metric-value"><b>-</b> <span class="metric-unit">hPa</span></div>
+  </div>
+    </div>
+    <div id="last_update">last update : <span>-</span></div>
+    <div id="canvas-container">
+      <script>
+        let metrics_format = {
+          'aqi' : {color: '#53a69b', unit:""},
+          'temperature' : {color: '#9467bd', unit:"°C"},
+          'relative_humidity' : {color: '#d62728', unit:"%"},
+          'pressure' : {color: '#2ca02c', unit:"ohm"},
+          'gas' : {color: '#ff7f0e', unit:"hPa"},
+          'altitude' : {color: '#1f77b4', unit:"metres"},
+      }
+
+        last_aqu = datasets['aqi'][datasets['aqi'].length-1].y
+        elem_aqu = document.querySelector('#last_aqui > div.metric-value > b')
+        elem_aqu.innerHTML = last_aqu.toFixed(1)
+        elem_aqu.style.color = metrics_format['aqi'].color
+
+        last_temp = datasets['temperature'][datasets['temperature'].length-1].y
+        elem_temp = document.querySelector('#last_temp > div.metric-value > b')
+        elem_temp.innerHTML = last_temp.toFixed(2)
+        elem_temp.style.color = metrics_format['temperature'].color
+
+        last_humidity = datasets['relative_humidity'][datasets['relative_humidity'].length-1].y
+        elem_hum = document.querySelector('#last_hum > div.metric-value > b')
+        elem_hum.innerHTML = last_humidity.toFixed(2)
+        elem_hum.style.color = metrics_format['relative_humidity'].color
+
+        last_gas = datasets['gas'][datasets['gas'].length-1].y
+        elem_gas = document.querySelector('#last_gas > div.metric-value > b')
+        elem_gas.innerHTML = last_gas.toFixed(2)
+        elem_gas.style.color = metrics_format['gas'].color
+
+        document.querySelector('#last_update span').innerHTML = moment(datasets['gas'][datasets['gas'].length-1].x).calendar()
+
+        Chart.defaults.plugins.legend.display = false
+
+        let div = document.getElementById('canvas-container');
+        for(metric in datasets){
+          canvas = document.createElement("canvas")
+          div.appendChild(canvas)
+          new Chart(canvas, {
+                  'type': 'line',
+                  'data': {
+                      'datasets': [
+                          {
+                            'label': metric,
+                            'data': datasets[metric],
+                            'fill': false,
+                            'tension' : 0.1,
+                            'borderColor': metrics_format[metric].color,
+                            'pointHoverBorderWidth': 0,
+                            'pointStyle': false
+                          }
+                      ],
+                  },
+                  options: {
+                    scales: {
+                      x: {
+                          type: 'time',
+                          time: {
+                              unit: 'minute',
+                              displayFormats: {
+                                minute: 'h:mm'
+                              }
+                          }
+                      },
+                      y: {
+                        ticks: {
+                          callback: function(value, index, ticks) {
+                              return value.toLocaleString(undefined,{ minimumFractionDigits: 2 }) + " " + metrics_format[metric].unit
+                          }
+                        }
+                      
+                      }
+                    },
+                  plugins: {
+                              title: {
+                              display: true,
+                              text: metric.toUpperCase() + (metrics_format[metric].unit != '' ? " (" + metrics_format[metric].unit + ")" : '') ,
+                              color: metrics_format[metric].color,
+                              font: {
+                                size: 28
+                              }
+                          }
+                      }
+                  }
+              }
+          );
+        }
+      </script>
+    </div>
+    </body>
+</html>
