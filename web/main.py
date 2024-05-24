@@ -95,7 +95,7 @@ def meteo_data():
     last_hours = request.args.get('last_hours', 24)
 
     datasets = get_formatted_data(last_hours = int(last_hours))
-    resp = make_response(f"var datasets = {json.dumps(datasets)}", 200)
+    resp = make_response(json.dumps(datasets), 200)
     resp.headers['Content-Type'] = 'application/javascript; charset=utf-8'
     resp.headers['Server'] = 'Pizza/0.1'
     return resp
