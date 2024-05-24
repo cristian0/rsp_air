@@ -73,9 +73,9 @@ def get_formatted_data(**kwargs):
 
     df_reshaped = df.pivot_table(values="value", index="date", columns="metric")
 
-    cols = ["temperature", "relative_humidity", "gas", "pressure", "altitude"]
+    cols = ["temperature", "relative_humidity", "pressure", "gas"]
     df_no_outliers = remove_iqr_outliers_multi(df_reshaped, cols, threshold=1.5)
-    cols.insert(0, "aqi")
+    cols.insert(3, "aqi")
     df_no_outliers["aqi"] = (
         np.log(df_no_outliers["gas"]) + 0.04 * df_no_outliers["relative_humidity"]
     )
