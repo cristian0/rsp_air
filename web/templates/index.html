@@ -34,9 +34,9 @@
           </div>
           </a>
       </div>
-      <div class="metric" id="last_gas">
-        <a href="#gasCanvas">
-          <div class="metric-name">Gas</div>
+      <div class="metric" id="last_pressure">
+        <a href="#pressureCanvas">
+          <div class="metric-name">Pressure</div>
           <div class="metric-value">
             <b>-</b> <span class="metric-unit">hPa</span>
           </div>
@@ -46,6 +46,14 @@
         <a href="#aqiCanvas">
           <div class="metric-name">AQI</div>
           <div class="metric-value"><b>-</b></div>
+        </a>
+      </div>
+      <div class="metric" id="last_gas">
+        <a href="#gasCanvas">
+          <div class="metric-name">Gas</div>
+          <div class="metric-value">
+            <b>-</b> <span class="metric-unit">hPa</span>
+          </div>
         </a>
       </div>
   </div>
@@ -72,19 +80,20 @@
         elem_aqu.innerHTML = last_aqu.toFixed(1);
         elem_aqu.style.color = metrics_format["aqi"].color;
 
-        last_temp =
-          datasets["temperature"][datasets["temperature"].length - 1].y;
+        last_temp = datasets["temperature"][datasets["temperature"].length - 1].y;
         elem_temp = document.querySelector("#last_temp  div.metric-value > b");
         elem_temp.innerHTML = last_temp.toFixed(2);
         elem_temp.style.color = metrics_format["temperature"].color;
 
-        last_humidity =
-          datasets["relative_humidity"][
-            datasets["relative_humidity"].length - 1
-          ].y;
+        last_humidity = datasets["relative_humidity"][datasets["relative_humidity"].length - 1].y;
         elem_hum = document.querySelector("#last_hum div.metric-value > b");
         elem_hum.innerHTML = last_humidity.toFixed(2);
         elem_hum.style.color = metrics_format["relative_humidity"].color;
+
+        last_pressure = datasets["gas"][datasets["gas"].length - 1].y;
+        elem_pressure = document.querySelector("#last_pressure div.metric-value > b");
+        elem_pressure.innerHTML = last_pressure.toFixed(2);
+        elem_pressure.style.color = metrics_format["pressure"].color;
 
         last_gas = datasets["gas"][datasets["gas"].length - 1].y;
         elem_gas = document.querySelector("#last_gas div.metric-value > b");
