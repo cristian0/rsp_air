@@ -1,232 +1,172 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <title>RSP Air</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction:column;
-            justify-content: center;
-            align-items: center;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-
-        .metrics-container {
-          display: flex;
-          gap: 20px;
-          width: 100%;
-          box-sizing: border-box;
-          margin-bottom: 20px;
-          justify-content: center;
-          margin: 3em 0 1em 0;
-        }
-
-        .metric {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            min-width: 150px;
-        }
-
-        .metric-name {
-            font-size: 1.2em;
-            margin-bottom: 10px;
-            color: #cacaca;
-        }
-
-        .metric-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #656565;
-        }
-
-        .metric-unit {
-            font-size: 0.8em;
-            color: #666;
-        }
-
-        #canvas-container{
-          display: flex;
-          flex-direction:column;
-          gap: 20px;
-          width: 100%;
-          box-sizing: border-box;
-          margin-bottom: 20px;
-        }
-
-        #last_update, #from{
-          color: #cacaca;
-          font-size: 0.8em;
-        }
-
-        canvas {
-          margin: 2em;
-          background-color: #ffffff;
-          padding: 1em;
-          border: 1px solid #ddd;
-        }
-
-        .buttons {
-          display: flex;
-        }
-        .buttons a{
-          display: inline-block;
-          padding: 10px 20px;
-          font-size: 16px;
-          color: #fff;
-          background-color: #5da2ed;
-          text-decoration: none;
-          border-radius: 5px;
-          transition: background-color 0.3s ease;
-          margin: .5em;
-        }
-        .buttons a:hover{
-          background-color: #0056b3;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="/static/style.css" />
   </head>
   <body>
     <div class="buttons">
-      <a href="#" onclick="update(5); return false;">5 Hours</a>
-      <a href="#" onclick="update(10); return false;">10 Hours</a>
-      <a href="#" onclick="update(24); return false;">24 Hours</a>
+      <a href="#" onclick="update(5); return false;">5h</a>
+      <a href="#" onclick="update(10); return false;">10h</a>
+      <a href="#" onclick="update(24); return false;">24h</a>
       <a href="#" onclick="update(999); return false;">All</a>
     </div>
-    <div id="from">From: <span>-</span></div>
-    <div id="last_update">Last update: <span>-</span></div>
+    <div class="updates-container">
+      <div id="since">Since: <span>-</span></div>
+      <div id="last_update">Last update: <span>-</span></div>
+    </div>
 
     <div class="metrics-container">
       <div class="metric" id="last_aqui">
-          <div class="metric-name">AQI</div>
-          <div class="metric-value"><b>-</b></div>
+        <div class="metric-name">AQI</div>
+        <div class="metric-value"><b>-</b></div>
       </div>
       <div class="metric" id="last_temp">
-          <div class="metric-name">Temp</div>
-          <div class="metric-value"><b>-</b> <span class="metric-unit">C°</span></div>
+        <div class="metric-name">Temp</div>
+        <div class="metric-value">
+          <b>-</b> <span class="metric-unit">C°</span>
+        </div>
       </div>
       <div class="metric" id="last_hum">
         <div class="metric-name">Humidity</div>
-        <div class="metric-value"><b>-</b> <span class="metric-unit">%</span></div>
+        <div class="metric-value">
+          <b>-</b> <span class="metric-unit">%</span>
+        </div>
+      </div>
+      <div class="metric" id="last_gas">
+        <div class="metric-name">Gas</div>
+        <div class="metric-value">
+          <b>-</b> <span class="metric-unit">hPa</span>
+        </div>
+      </div>
     </div>
-    <div class="metric" id="last_gas">
-      <div class="metric-name">Gas</div>
-      <div class="metric-value"><b>-</b> <span class="metric-unit">hPa</span></div>
-  </div>
-    </div>
-    <div id="canvas-container">
-      <script>
+    <div id="canvas-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+    <script>
+      let datasets = {};
+      let hours = 10;
 
-        let datasets = {};
-        let hours = 10
+      let render = function (datasets) {
+        let metrics_format = {
+          aqi: { color: "#53a69b", unit: "" },
+          temperature: { color: "#9467bd", unit: "°C" },
+          relative_humidity: { color: "#d62728", unit: "%" },
+          pressure: { color: "#2ca02c", unit: "ohm" },
+          gas: { color: "#ff7f0e", unit: "hPa" },
+          altitude: { color: "#1f77b4", unit: "metres" },
+        };
 
-        let render = function(datasets){
+        last_aqu = datasets["aqi"][datasets["aqi"].length - 1].y;
+        elem_aqu = document.querySelector("#last_aqui > div.metric-value > b");
+        elem_aqu.innerHTML = last_aqu.toFixed(1);
+        elem_aqu.style.color = metrics_format["aqi"].color;
 
-          let metrics_format = {
-            'aqi' : {color: '#53a69b', unit:""},
-            'temperature' : {color: '#9467bd', unit:"°C"},
-            'relative_humidity' : {color: '#d62728', unit:"%"},
-            'pressure' : {color: '#2ca02c', unit:"ohm"},
-            'gas' : {color: '#ff7f0e', unit:"hPa"},
-            'altitude' : {color: '#1f77b4', unit:"metres"},
-          }
+        last_temp =
+          datasets["temperature"][datasets["temperature"].length - 1].y;
+        elem_temp = document.querySelector("#last_temp > div.metric-value > b");
+        elem_temp.innerHTML = last_temp.toFixed(2);
+        elem_temp.style.color = metrics_format["temperature"].color;
 
-          last_aqu = datasets['aqi'][datasets['aqi'].length-1].y
-          elem_aqu = document.querySelector('#last_aqui > div.metric-value > b')
-          elem_aqu.innerHTML = last_aqu.toFixed(1)
-          elem_aqu.style.color = metrics_format['aqi'].color
-  
-          last_temp = datasets['temperature'][datasets['temperature'].length-1].y
-          elem_temp = document.querySelector('#last_temp > div.metric-value > b')
-          elem_temp.innerHTML = last_temp.toFixed(2)
-          elem_temp.style.color = metrics_format['temperature'].color
-  
-          last_humidity = datasets['relative_humidity'][datasets['relative_humidity'].length-1].y
-          elem_hum = document.querySelector('#last_hum > div.metric-value > b')
-          elem_hum.innerHTML = last_humidity.toFixed(2)
-          elem_hum.style.color = metrics_format['relative_humidity'].color
-  
-          last_gas = datasets['gas'][datasets['gas'].length-1].y
-          elem_gas = document.querySelector('#last_gas > div.metric-value > b')
-          elem_gas.innerHTML = last_gas.toFixed(2)
-          elem_gas.style.color = metrics_format['gas'].color
-  
-          document.querySelector('#last_update span').innerHTML = moment(datasets['gas'][datasets['gas'].length-1].x).calendar()
-          document.querySelector('#from span').innerHTML = moment(datasets['gas'][0].x).calendar()
-  
-          Chart.defaults.plugins.legend.display = false
-    
-          let div = document.getElementById('canvas-container');
-          div.replaceChildren();
-          for(metric in datasets){
-            canvas = document.createElement("canvas")
-            div.appendChild(canvas)
-            new Chart(canvas, {
-                    'type': 'line',
-                    'data': {
-                        'datasets': [
-                            {
-                              'label': metric,
-                              'data': datasets[metric],
-                              'fill': false,
-                              'tension' : 0.1,
-                              'borderColor': metrics_format[metric].color,
-                              'pointHoverBorderWidth': 0,
-                              'pointStyle': false
-                            }
-                        ],
+        last_humidity =
+          datasets["relative_humidity"][
+            datasets["relative_humidity"].length - 1
+          ].y;
+        elem_hum = document.querySelector("#last_hum > div.metric-value > b");
+        elem_hum.innerHTML = last_humidity.toFixed(2);
+        elem_hum.style.color = metrics_format["relative_humidity"].color;
+
+        last_gas = datasets["gas"][datasets["gas"].length - 1].y;
+        elem_gas = document.querySelector("#last_gas > div.metric-value > b");
+        elem_gas.innerHTML = last_gas.toFixed(2);
+        elem_gas.style.color = metrics_format["gas"].color;
+
+        document.querySelector("#last_update span").innerHTML = moment(
+          datasets["gas"][datasets["gas"].length - 1].x
+        ).calendar();
+        document.querySelector("#since span").innerHTML = moment(
+          datasets["gas"][0].x
+        ).calendar();
+
+        Chart.defaults.plugins.legend.display = false;
+
+        let div = document.getElementById("canvas-container");
+        div.replaceChildren();
+        for (metric in datasets) {
+          canvas = document.createElement("canvas");
+          div.appendChild(canvas);
+          new Chart(canvas, {
+            type: "line",
+            data: {
+              datasets: [
+                {
+                  label: metric,
+                  data: datasets[metric],
+                  fill: false,
+                  tension: 0.1,
+                  borderColor: metrics_format[metric].color,
+                  pointHoverBorderWidth: 0,
+                  pointStyle: false,
+                },
+              ],
+            },
+            options: {
+              scales: {
+                x: {
+                  type: "time",
+                  time: {
+                    unit: "minute",
+                    displayFormats: {
+                      minute: "h:mm",
                     },
-                    options: {
-                      scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'minute',
-                                displayFormats: {
-                                  minute: 'h:mm'
-                                }
-                            }
-                        },
-                        y: {
-                          ticks: {
-                            callback: function(value, index, ticks) {
-                                return value.toLocaleString(undefined,{ minimumFractionDigits: 2 }) + " " + metrics_format[metric].unit
-                            }
-                          }
-                        
-                        }
-                      },
-                    plugins: {
-                                title: {
-                                display: true,
-                                text: metric.toUpperCase() + (metrics_format[metric].unit != '' ? " (" + metrics_format[metric].unit + ")" : '') ,
-                                color: metrics_format[metric].color,
-                                font: {
-                                  size: 28
-                                }
-                            }
-                        }
-                    }
-                }
-            );
-          }
+                  },
+                },
+                y: {
+                  ticks: {
+                    callback: function (value, index, ticks) {
+                      return (
+                        value.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        }) +
+                        " " +
+                        metrics_format[metric].unit
+                      );
+                    },
+                  },
+                },
+              },
+              plugins: {
+                title: {
+                  display: true,
+                  text:
+                    metric.toUpperCase() +
+                    (metrics_format[metric].unit != ""
+                      ? " (" + metrics_format[metric].unit + ")"
+                      : ""),
+                  color: metrics_format[metric].color,
+                  font: {
+                    size: 28,
+                  },
+                },
+              },
+            },
+          });
         }
+      };
 
-        let update = function(hours){
-          hours = hours ?? 10
-          fetch('/meteo_data.js?last_hours=' + hours)
-          .then(res => res.json())
-          .then(function(out) {render(out)})
-          .catch(err => { throw err });
-        }
-        update(hours)
-      </script>
-    </div>
-    </body>
+      let update = function (hours) {
+        hours = hours ?? 10;
+        fetch("/meteo_data.js?last_hours=" + hours)
+          .then((res) => res.json())
+          .then(function (out) {
+            render(out);
+          })
+          .catch((err) => {
+            throw err;
+          });
+      };
+      update(hours);
+    </script>
+  </body>
 </html>
