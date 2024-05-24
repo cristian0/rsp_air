@@ -90,7 +90,7 @@
         elem_hum.innerHTML = last_humidity.toFixed(2);
         elem_hum.style.color = metrics_format["relative_humidity"].color;
 
-        last_pressure = datasets["gas"][datasets["gas"].length - 1].y;
+        last_pressure = datasets["pressure"][datasets["pressure"].length - 1].y;
         elem_pressure = document.querySelector("#last_pressure div.metric-value > b");
         elem_pressure.innerHTML = last_pressure.toFixed(2);
         elem_pressure.style.color = metrics_format["pressure"].color;
