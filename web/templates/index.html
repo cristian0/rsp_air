@@ -15,6 +15,7 @@
     <div class="updates-container">
       <div id="since">Since: <span>-</span></div>
       <div id="last_update">Last update: <span>-</span></div>
+      <div id="sampling">Sampling: <span>-</span></div>
     </div>
 
     <div class="metrics-container">
@@ -65,7 +66,10 @@
       let datasets = {};
       let hours = 10;
 
-      let render = function (datasets) {
+      let render = function (ret) {
+        let datasets = ret.datasets
+        let sample_rate_applied = ret.sample_rate_applied
+
         let metrics_format = {
           aqi: { color: "#53a69b", unit: "" },
           temperature: { color: "#9467bd", unit: "°C" },
@@ -106,6 +110,7 @@
         document.querySelector("#since span").innerHTML = moment(
           datasets["gas"][0].x
         ).calendar();
+        document.querySelector("#sampling span").innerHTML = sample_rate_applied[1]
 
         Chart.defaults.plugins.legend.display = false;
 

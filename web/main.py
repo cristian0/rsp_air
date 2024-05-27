@@ -64,14 +64,20 @@ def get_formatted_data(**kwargs):
     one_hour = 60 * 60
     hours_delay = last_hours * one_hour
 
-    howback_date = datetime.timestamp(datetime.now()) - hours_delay
+    if hours_delay > 10*one_hour:
+        sample_rate = ('1H', 'One hour')
+    elif hours_delay > 2 * one_hour:
+        sample_rate = ('5T', 'Five minutes')
+    else:
+        sample_rate = ('2T', 'Two minutes')
 
-    df = df[df["date"] > howback_date]
+    df = df[df["date"] > (datetime.timestamp(datetime.now()) - hours_delay)]
 
     df["date"] = df["date"].apply(datetime.fromtimestamp)
     df.set_index("date", inplace=True)
-
     df_reshaped = df.pivot_table(values="value", index="date", columns="metric")
+
+    df_reshaped = df_reshaped.resample(sample_rate[0]).mean()
 
     cols = ["temperature", "relative_humidity", "pressure", "gas"]
     df_no_outliers = remove_iqr_outliers_multi(df_reshaped, cols, threshold=1.5)
@@ -87,7 +93,7 @@ def get_formatted_data(**kwargs):
         ret[_col] = ret[_col].to_dict(orient="records")
         ret[_col] = [{"x": item["date"], "y": item[_col]} for item in ret[_col]]
 
-    return ret
+    return {'datasets': ret, 'sample_rate_applied': sample_rate}
 
 
 app = Flask(__name__)
