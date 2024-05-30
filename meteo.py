@@ -55,6 +55,9 @@ def insert_sampling(metric, value):
 ###########################################################
 
 def main():
+    
+    SAMPLE_FREQUENCY_IN_SECONDS = 1 * 60
+    
     """The main function that runs the sensor data collection and logging."""
     log(f"Started")
 
@@ -83,7 +86,7 @@ def main():
         except Exception as e:
             log(f"Error during sampling: {e}")
 
-        time.sleep(3)
+        time.sleep(SAMPLE_FREQUENCY_IN_SECONDS)
 
 
 if __name__ == '__main__':
