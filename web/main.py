@@ -3,7 +3,7 @@ import json
 import sqlite3
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def db_to_dataframe(db_file, table_name):
@@ -57,41 +57,57 @@ def remove_iqr_outliers_multi(df, columns_to_check, threshold=1.1):
 
 
 def get_formatted_data(**kwargs):
+    # Define constants
+    SECONDS_IN_HOUR = 3600
+    DEFAULT_LAST_HOURS = 24
 
-    last_hours = kwargs["last_hours"] if "last_hours" in kwargs else 24
+    # Get the number of hours to look back, defaulting to 24 if not provided
+    last_hours = kwargs.get("last_hours", DEFAULT_LAST_HOURS)
+    hours_delay = last_hours * SECONDS_IN_HOUR
 
+    # Load data from the database into a DataFrame
     df = db_to_dataframe("../air.db", "meteo_samples")
-    one_hour = 60 * 60
-    hours_delay = last_hours * one_hour
 
-    if hours_delay > 10*one_hour:
+    # Determine the sampling rate based on the hours_delay
+    if hours_delay > 10 * SECONDS_IN_HOUR:
         sample_rate = ('1H', 'One hour')
-    elif hours_delay > 2 * one_hour:
+    elif hours_delay > 2 * SECONDS_IN_HOUR:
         sample_rate = ('5T', 'Five minutes')
     else:
         sample_rate = ('2T', 'Two minutes')
 
-    df = df[df["date"] > (datetime.timestamp(datetime.now()) - hours_delay)]
+    # Filter the DataFrame to include only rows within the specified time range
+    cutoff_time = datetime.now() - timedelta(seconds=hours_delay)
+    df = df[df["date"] > datetime.timestamp(cutoff_time)]
 
-    df["date"] = df["date"].apply(datetime.fromtimestamp)
+    # Convert the 'date' column from timestamps to datetime objects and set it as the index
+    df["date"] = pd.to_datetime(df["date"], unit='s')
     df.set_index("date", inplace=True)
+
+    # Reshape the DataFrame to have 'date' as the index and 'metric' as columns with 'value' as data
     df_reshaped = df.pivot_table(values="value", index="date", columns="metric")
 
+    # Resample the reshaped DataFrame based on the sample rate
     df_reshaped = df_reshaped.resample(sample_rate[0]).mean()
 
+    # List of columns to process
     cols = ["temperature", "relative_humidity", "pressure", "gas"]
+
+    # Remove outliers from the DataFrame
     df_no_outliers = remove_iqr_outliers_multi(df_reshaped, cols, threshold=1.5)
+
+    # Calculate AQI and add it to the DataFrame
+    df_no_outliers["aqi"] = np.log(df_no_outliers["gas"]) + 0.04 * df_no_outliers["relative_humidity"]
     cols.insert(3, "aqi")
-    df_no_outliers["aqi"] = (
-        np.log(df_no_outliers["gas"]) + 0.04 * df_no_outliers["relative_humidity"]
-    )
-    ret = {}
-    for _col in cols:
-        ret[_col] = df_no_outliers[_col]
-        ret[_col] = ret[_col].reset_index()
-        ret[_col]["date"] = ret[_col]["date"].astype(str)
-        ret[_col] = ret[_col].to_dict(orient="records")
-        ret[_col] = [{"x": item["date"], "y": item[_col]} for item in ret[_col]]
+
+    # Prepare the final return dictionary
+    ret = {
+        col: [
+            {"x": item["date"].isoformat(), "y": item[col]} 
+            for item in df_no_outliers[[col]].reset_index().to_dict(orient="records")
+        ] 
+        for col in cols
+    }
 
     return {'datasets': ret, 'sample_rate_applied': sample_rate}
 
