@@ -72,9 +72,9 @@ def get_formatted_data(**kwargs):
     if hours_delay > 10 * SECONDS_IN_HOUR:
         sample_rate = ('1H', 'One hour')
     elif hours_delay > 2 * SECONDS_IN_HOUR:
-        sample_rate = False
+        sample_rate = ('5T', 'Five minutes')
     else:
-        sample_rate = False
+        sample_rate = ('2T', 'Two minutes')
 
     # Filter the DataFrame to include only rows within the specified time range
     cutoff_time = datetime.now() - timedelta(seconds=hours_delay)
