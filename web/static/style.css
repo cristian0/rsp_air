@@ -1,35 +1,39 @@
 body {
   font-family: Arial, sans-serif;
+  font-size: 14px;
+  color: #777;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   margin: 0;
   background-color: #f0f0f0;
+  padding: 0 1em;
+}
+
+body > * {
+  margin: 0;
+  margin-bottom: 1em;
 }
 
 .updates-container {
   display: flex;
   flex-direction: row;
   box-sizing: border-box;
-  margin: 0 0 .5em 0;
   gap: 1em;
-  font-size: 2.5em
+  font-size: 3vw;
+  width: 100%;
+  justify-content: space-around;
 }
 .updates-container div {
-  color: #cacaca;
-  font-size: 0.8em;
-}
-.updates-container div span {
-  font-weight: bold;
+  font-size: .8em;
 }
 
 .metrics-container {
   display: flex;
-  gap: 20px;
   width: 100%;
   box-sizing: border-box;
-  justify-content: center;
+  justify-content: space-between;
 }
 
 .metric {
@@ -38,22 +42,22 @@ body {
   border-radius: 8px;
   padding: 0;
   text-align: center;
-  min-width: 150px;
+  min-width: 13em;
+  text-wrap: nowrap;
 }
 
 .metric a{
-  padding: 20px;
+  padding: 1em;
   display: block;
   text-decoration: none;
 }
 .metric-name {
   font-size: 1.2em;
   margin-bottom: 10px;
-  color: #cacaca;
 }
 
 .metric-value {
-  font-size: 2em;
+  font-size: 1.6em;
   font-weight: bold;
   color: #656565;
 }
@@ -70,10 +74,10 @@ body {
   width: 100%;
   box-sizing: border-box;
   margin-bottom: 20px;
+  margin: 1em 0 1em 0;
 }
 
 canvas {
-  margin: 2em;
   background-color: #ffffff;
   padding: 1em;
   border: 1px solid #ddd;
@@ -84,8 +88,8 @@ canvas {
 }
 .buttons a {
   display: inline-block;
-  padding: 10px 20px;
-  font-size: 2em;
+  padding: 0.7em;
+  font-size: 1.7em;
   color: #fff;
   background-color: #5da2ed;
   text-decoration: none;
