@@ -10,10 +10,11 @@ body {
 
 .updates-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   box-sizing: border-box;
-  margin-bottom: 20px;
-  margin: 0;
+  margin: 0 0 .5em 0;
+  gap: 1em;
+  font-size: 2.5em
 }
 .updates-container div {
   color: #cacaca;
@@ -29,7 +30,6 @@ body {
   width: 100%;
   box-sizing: border-box;
   justify-content: center;
-  margin: 3em 0 0 0;
 }
 
 .metric {
@@ -85,7 +85,7 @@ canvas {
 .buttons a {
   display: inline-block;
   padding: 10px 20px;
-  font-size: 16px;
+  font-size: 2em;
   color: #fff;
   background-color: #5da2ed;
   text-decoration: none;
