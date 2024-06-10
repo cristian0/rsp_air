@@ -21,8 +21,7 @@ def db_to_dataframe(db_file, table_name):
 
         # Execute a query to select all rows from the specified table
         cur.execute(f"SELECT * FROM {table_name}")
-        res = cur.execute("SELECT * FROM meteo_samples")
-        df = pd.DataFrame(res.fetchall(), columns=[i[0] for i in cur.description])
+        df = pd.DataFrame(cur.fetchall(), columns=[i[0] for i in cur.description])
         conn.close()
         return df
 
@@ -81,7 +80,8 @@ def get_formatted_data(**kwargs):
     df = df[df["date"] > datetime.timestamp(cutoff_time)]
 
     # Convert the 'date' column from timestamps to datetime objects and set it as the index
-    df["date"] = pd.to_datetime(df["date"], unit='s')
+    df["date"] = pd.to_datetime(df["date"], unit='s', utc=True)
+    df["date"] = df["date"].dt.tz_convert('Europe/Rome')
     df.set_index("date", inplace=True)
 
     # Reshape the DataFrame to have 'date' as the index and 'metric' as columns with 'value' as data
@@ -110,7 +110,6 @@ def get_formatted_data(**kwargs):
     }
 
     return {'datasets': ret, 'sample_rate_applied': sample_rate}
-
 
 app = Flask(__name__)
 
