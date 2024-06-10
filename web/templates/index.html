@@ -123,7 +123,9 @@
 
         let div = document.getElementById("canvas-container");
         div.replaceChildren();
+        current_metric = false
         for (metric in datasets) {
+          let current_metric = metric
           canvas = document.createElement("canvas");
           canvas.id = metric + "Canvas"
           div.appendChild(canvas);
@@ -161,21 +163,39 @@
                           minimumFractionDigits: 2,
                         }) +
                         " " +
-                        metrics_format[metric].unit
+                        metrics_format[current_metric].unit
                       );
                     },
                   },
                 },
               },
               plugins: {
+                tooltip: {
+                  callbacks: {
+                      label: function(context) {
+                          let label = context.dataset.label || '';
+  
+                          if (label) {
+                              label += ': ';
+                          }
+                          if (context.parsed.y !== null) {
+
+                            label += context.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 2,}) +
+                            " " +
+                            metrics_format[current_metric].unit
+                          }
+                          return label;
+                      }
+                  }
+                },
                 title: {
                   display: true,
                   text:
                     metric.toUpperCase() +
                     (metrics_format[metric].unit != ""
-                      ? " (" + metrics_format[metric].unit + ")"
+                      ? " (" + metrics_format[current_metric].unit + ")"
                       : ""),
-                  color: metrics_format[metric].color,
+                  color: metrics_format[current_metric].color,
                   font: {
                     size: 28,
                   },
